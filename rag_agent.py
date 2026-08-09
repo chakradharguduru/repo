@@ -79,6 +79,7 @@ class RepoRAGAgent:
                     "chunk_name": c["chunk_name"],
                     "layer": c["layer"],
                     "domain": c["domain"],
+                    "source_url": c.get("source_url"),
                     "preview": c["content"][:300],
                 }
                 for c in chunks

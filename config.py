@@ -62,7 +62,24 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 # stronger reasoning than the smaller 8b-instant default, which matters
 # for multi-step "what transformations happen here" style questions.
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+
+
 GROQ_TEMPERATURE = float(os.getenv("GROQ_TEMPERATURE", "0.3"))
+
+# -----------------------------
+# Confluence (documentation source, alongside the repo)
+# -----------------------------
+CONFLUENCE_BASE_URL = os.getenv("CONFLUENCE_BASE_URL", "").rstrip("/")
+CONFLUENCE_EMAIL = os.getenv("CONFLUENCE_EMAIL")
+CONFLUENCE_API_TOKEN = os.getenv("CONFLUENCE_API_TOKEN")
+CONFLUENCE_SPACE_KEY = os.getenv("CONFLUENCE_SPACE_KEY", "")
+
+# Fetched pages are cached here as plain text so context.py can re-read them
+# the same way it re-reads repo source files (see confluence_ingest.py).
+CONFLUENCE_CACHE_DIR = Path(os.getenv("CONFLUENCE_CACHE_DIR", "confluence_cache"))
+
+# Confluence ingestion is opt-in: only runs if all three are set in .env.
+CONFLUENCE_ENABLED = bool(CONFLUENCE_BASE_URL and CONFLUENCE_EMAIL and CONFLUENCE_API_TOKEN)
 
 # -----------------------------
 # Search behavior

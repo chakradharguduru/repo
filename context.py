@@ -48,14 +48,17 @@ def build_context(chunks: List[Dict]) -> str:
 
         print(f"-> Read {len(content)} characters")
 
-        parts.append(
+        header = (
             "==================================================\n"
             f"FILE : {chunk['file_name']}\n"
             f"PATH : {file_path}\n"
             f"TYPE : {chunk.get('file_type', 'unknown')}\n"
-            "==================================================\n"
-            f"{content}"
         )
+        if chunk.get("source_url"):
+            header += f"URL  : {chunk['source_url']}\n"
+        header += "==================================================\n"
+
+        parts.append(header + content)
 
     context = "\n".join(parts)
 

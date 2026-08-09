@@ -12,6 +12,9 @@ venv/
 # FAISS index
 index_store/
 
+# Cached Confluence page text (fetched documentation, not source)
+confluence_cache/
+
 # VS Code
 .vscode/
 

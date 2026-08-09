@@ -193,7 +193,10 @@ def display_sources(sources, elapsed=None):
                 badges += f"<span class='source-badge'>chunk: {source['chunk_name']}</span>"
             st.markdown(badges, unsafe_allow_html=True)
 
-            st.code(source["file_path"], language="text")
+            if source.get("source_url"):
+                st.markdown(f"[Open in Confluence]({source['source_url']})")
+            else:
+                st.code(source["file_path"], language="text")
 
             if source.get("preview"):
                 with st.popover("Preview snippet"):

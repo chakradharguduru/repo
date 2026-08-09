@@ -10,6 +10,7 @@ import sys
 
 import config
 from ingest import ingest_repo
+from confluence_ingest import ingest_confluence
 from embed_index import build_vector_index, save_index, load_index, index_exists
 from search import RepoSearchEngine
 from rag_agent import RepoRAGAgent
@@ -18,7 +19,18 @@ from rag_agent import RepoRAGAgent
 def build_fresh_index():
     print(f"Ingesting repo at {config.ROOT_DIR} ...")
     chunks = ingest_repo(config.ROOT_DIR)
-    print(f"Got {len(chunks)} chunks.")
+    print(f"Got {len(chunks)} repo chunks.")
+
+    if config.CONFLUENCE_ENABLED:
+        print(f"Ingesting Confluence space {config.CONFLUENCE_SPACE_KEY} ...")
+        try:
+            confluence_chunks = ingest_confluence()
+            print(f"Got {len(confluence_chunks)} Confluence chunks.")
+            chunks.extend(confluence_chunks)
+        except Exception as e:
+            print(f"Confluence ingestion failed, continuing with repo-only index: {e}")
+    else:
+        print("Confluence not configured (CONFLUENCE_BASE_URL/EMAIL/API_TOKEN) — skipping.")
 
     if not chunks:
         print("No chunks were created. Check ROOT_DIR and SUPPORTED_EXTENSIONS in config.py.")

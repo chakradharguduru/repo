@@ -102,18 +102,39 @@ class RepoSearchEngine:
         Affinity for a file = the strongest matched alias pointing to it:
           specificity (1/#files)  +0.1 if the alias is multi-word
                                    +1.0 if the alias IS the file's full name.
+
+        STOPWORD_ALIASES only suppresses a single word acting as a FRAGMENT of
+        a longer name (e.g. "order" inside "revel_staging_brand_order" — too
+        generic to mean the user named that file). It must NOT suppress a word
+        that is a file's entire name (e.g. a Confluence page literally titled
+        "Order") — that's a deliberate, specific reference, not a stray
+        business term, and dropping it entirely was hiding exact page-name
+        matches whenever the title happened to also be a generic English word.
+
+        Multi-word aliases require the words to be ADJACENT and in-order in
+        the query (not just present anywhere), matching how they were built
+        from adjacent parts of the file name. A bag-of-words check ("both
+        words appear somewhere") is fine for short, deliberate queries like
+        "what is the payment type", but on a long natural-language question
+        it spuriously matches unrelated word pairs (e.g. "...data sources
+        AND ... transaction domain..." bag-matching an alias "and_transaction"
+        from a completely unrelated file) purely by coincidence.
         """
-        query_words = set(re.findall(r"[a-zA-Z0-9_]+", query.lower()))
+        query_words_seq = re.findall(r"[a-zA-Z0-9_]+", query.lower())
+        query_words = set(query_words_seq)
 
         matched_aliases: List[str] = []
         for alias in self.file_aliases:
             parts = alias.split("_")
             if len(parts) > 1:
-                if alias in query_words or all(p in query_words for p in parts):
+                n = len(parts)
+                adjacent = any(
+                    query_words_seq[i:i + n] == parts
+                    for i in range(len(query_words_seq) - n + 1)
+                )
+                if alias in query_words or adjacent:
                     matched_aliases.append(alias)
             else:
-                if alias in STOPWORD_ALIASES:
-                    continue
                 if alias in query_words:
                     matched_aliases.append(alias)
 
@@ -121,9 +142,13 @@ class RepoSearchEngine:
         for alias in matched_aliases:
             base = self.alias_scores[alias]
             multiword_bonus = 0.1 if "_" in alias else 0.0
+            is_stopword = "_" not in alias and alias in STOPWORD_ALIASES
             for f in self.file_aliases[alias]:
+                exact = (alias == f.lower())
+                if is_stopword and not exact:
+                    continue  # generic fragment match only — not a reliable signal
                 score = base + multiword_bonus
-                if alias == f.lower():          # exact full-name match
+                if exact:
                     score += 1.0
                 if score > affinity.get(f, 0.0):
                     affinity[f] = score

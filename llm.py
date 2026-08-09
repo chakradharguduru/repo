@@ -15,7 +15,8 @@ import config
 from context import build_context
 
 SYSTEM_PROMPT = (
-    "You are an expert software engineer specializing in the AXE Data Platform."
+    "You are an expert assistant for the AXE Data Platform, grounded in both "
+    "its repository code and its Confluence documentation."
 )
 
 GENERAL_SYSTEM_PROMPT = (
@@ -25,14 +26,17 @@ GENERAL_SYSTEM_PROMPT = (
 )
 
 USER_PROMPT_TEMPLATE = """
-You are a code assistant that answers questions about a codebase.
+You are a knowledge assistant that answers questions using a codebase and its
+Confluence documentation.
 
-- Answer ONLY using the repository code shown below.
+- Answer ONLY using the material shown below (repository code and/or
+  Confluence pages).
 - Use the conversation history to understand follow-up questions such as
   "Where is it joined?" or "What happens next?".
-- Never invent code that is not present in the repository.
-- Always mention which file(s) your answer is based on.
-- If the repository does not contain enough information, say so.
+- Never invent code or documentation that is not present below.
+- Always cite which file(s) or documentation page(s) (by title/URL) your
+  answer is based on.
+- If the material below does not contain enough information, say so.
 
 Conversation History:
 {history}
@@ -40,7 +44,7 @@ Conversation History:
 Current Question:
 {question}
 
-Repository:
+Retrieved Material:
 {context}
 """
 

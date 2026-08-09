@@ -29,8 +29,9 @@ import config
 
 
 _ROUTER_SYSTEM = (
-    "You are a query router for a code assistant that answers questions about "
-    "the AXE Data Platform repository. You return ONLY a JSON object."
+    "You are a query router for a knowledge assistant that answers questions "
+    "about the AXE Data Platform — both its repository code and its "
+    "Confluence documentation. You return ONLY a JSON object."
 )
 
 _ROUTER_TEMPLATE = """
@@ -43,12 +44,14 @@ Return ONLY a JSON object, no prose, no markdown fences. Schema:
 }}
 
 Rules:
-- "codebase": the user is asking about this repository — its files, code,
-  pipelines, transformations, tables, joins, config, or anything they were
-  already discussing about the code. Use history to know if a short message
-  like "what is the table name" is a follow-up about the code.
+- "codebase": the user is asking about this repository or its Confluence
+  documentation — files, code, pipelines, transformations, tables, joins,
+  config, docs/pages, processes, or anything they were already discussing.
+  Use history to know if a short message like "what is the table name" is a
+  follow-up about something already discussed.
 - "general": greetings, thanks, small talk, math (e.g. 1+1), or definitions
-  of general concepts NOT specific to this repo. These need no code search.
+  of general concepts NOT specific to this repo or its docs. These need no
+  retrieval.
 - standalone_query: only when mode is "codebase". Rewrite the CURRENT message
   into ONE self-contained search query by pulling the relevant file/subject
   from the conversation history. If it is already self-contained, repeat it

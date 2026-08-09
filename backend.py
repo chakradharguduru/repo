@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from ingest import ingest_repo
+from confluence_ingest import ingest_confluence
 from embed_index import (
     build_vector_index,
     load_index,
@@ -20,6 +21,17 @@ from rag_agent import RepoRAGAgent
 import config
 
 app = FastAPI(title="AXE Repository Assistant API")
+
+
+def _ingest_all():
+    """Repo chunks + (if configured) Confluence chunks, merged for one index."""
+    chunks = ingest_repo(config.ROOT_DIR)
+    if config.CONFLUENCE_ENABLED:
+        try:
+            chunks.extend(ingest_confluence())
+        except Exception as e:
+            print(f"Confluence ingestion failed, continuing with repo-only index: {e}")
+    return chunks
 
 # Streamlit runs on a different port (localhost:8501 by default), so it
 # needs CORS permission to call this API from the browser.
@@ -37,7 +49,7 @@ if index_exists():
     chunks, embeddings = load_index()
     model = None
 else:
-    chunks = ingest_repo(config.ROOT_DIR)
+    chunks = _ingest_all()
     model, _, embeddings = build_vector_index(chunks)
     save_index(chunks, embeddings)
 
@@ -90,7 +102,7 @@ def chat(request: ChatRequest):
 def rebuild():
     """Re-ingest the repo and rebuild the index without restarting the server."""
     global chunks, embeddings, search_engine, agent
-    new_chunks = ingest_repo(config.ROOT_DIR)
+    new_chunks = _ingest_all()
     _, _, new_embeddings = build_vector_index(new_chunks)
     save_index(new_chunks, new_embeddings)
 
