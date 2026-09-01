@@ -19,7 +19,8 @@ codebases — don't confuse "the repo" in prompts/docstrings (the *indexed targe
 
 ```bash
 # Install dependencies
-pip install -r requirements.txt
+pip install -r requirements.txt          # runtime only
+pip install -r requirements-dev.txt      # + pytest/pytest-cov/pytest-mock/httpx, for tests/scripts
 
 # Run the CLI (builds index on first run, loads saved index after)
 python main.py
@@ -28,9 +29,26 @@ python main.py --rebuild     # force re-ingest + re-embed
 # Run the web UI (two terminals)
 uvicorn backend:app --reload
 streamlit run frontend/app.py
+
+# Tests (unit + integration + non-live e2e; @pytest.mark.live excluded by
+# default via pyproject.toml's addopts — needs no API keys/secrets)
+pytest
+pytest --cov=. --cov-report=term-missing --cov-report=html   # + coverage, htmlcov/
+
+# Live E2E test against the real Groq API (needs GROQ_API_KEY in .env)
+pytest -m live tests/e2e/test_api_e2e.py
+
+# Evaluation scripts (scripts/) — standalone, run against the REAL saved
+# index in index_store/ and (except eval_retrieval.py) the real Groq API.
+# Not part of `pytest` at all.
+python scripts/generate_test_queries.py   # (re)generate scripts/test_queries.json from real index content
+python scripts/eval_retrieval.py          # Top-3 recall, no API key needed
+python scripts/eval_hallucination.py      # grounding judge + out-of-scope guard check
+python scripts/eval_citations.py          # citation correctness
+python scripts/run_evaluation_harness.py  # all of the above in one pass -> scripts/evaluation_report.md
 ```
 
-There is no test suite, linter, or build step configured in this repo.
+Linter: none configured. Build step: none — it's a plain script/CLI project, nothing to compile.
 
 Configuration is via `.env` (see `config.py` for all variables): `GROQ_API_KEY` (required for
 answers/routing), `REPO_ROOT` (target repo to index), `INDEX_DIR`, `ROUTER_MODEL`, `GROQ_MODEL`,
@@ -93,6 +111,47 @@ The index in `index_store/` (`chunks.json` + `embeddings.npy`) is a cache of the
 stale when the target repo (`ROOT_DIR`) changes and must be rebuilt (`--rebuild` CLI flag or the
 `/rebuild` API endpoint) to pick up edits.
 
-`llm.generate_answer` writes the full prompt sent to Groq to `prompt.txt` on every call (for
-inspection/debugging) and prints extensive diagnostics to stdout — this is by design for this project,
-not something to strip out.
+`llm.generate_answer` writes the full prompt sent to Groq to `config.PROMPT_LOG_FILE` (default
+`prompt.txt`, gitignored) on every call (for inspection/debugging) and prints extensive diagnostics to
+stdout — this is by design for this project, not something to strip out. That stdout dump (and
+`context.py`'s equivalent) goes through `utils.safe_print` rather than a bare `print()`, because raw
+retrieved content can contain characters Windows' default `cp1252` console encoding can't represent
+(em dashes, arrows — common from Confluence pages) and a bare `print()` crashes outright on them.
+
+`config.py` also redacts anything that looks like a secret (`KEY`/`TOKEN`/`SECRET`/`PASSWORD` in the
+env var name) before printing `.env` contents or `GROQ_API_KEY` at import time — this file gets imported
+by every test and by CI, so the raw values must never hit stdout/CI logs.
+
+## Testing & evaluation
+
+```
+tests/
+  conftest.py         FakeEmbedder (deterministic, no model download) + FakeGroqClient fixtures
+  fixtures/            small sample .py/.yaml files + Confluence HTML fixtures ingestion tests run against
+  unit/                 one file per module — external LLM calls mocked, no network/real model
+  integration/           ingest->embed->FAISS->retrieval per source type; router->retrieval->prompt w/ history rewrite
+  e2e/                    FastAPI TestClient scenarios (general/repo-code/confluence-docs) + one @pytest.mark.live test
+scripts/
+  eval_common.py        shared helpers (load real index/agent, judge_grounding/judge_quality, retry-on-429)
+  generate_test_queries.py  samples real chunks from index_store/ -> scripts/test_queries.json (placeholder queries — review before trusting)
+  eval_retrieval.py     Top-3 recall vs scripts/test_queries.json (no LLM calls)
+  eval_hallucination.py grounding-judge pass + fixed out-of-scope queries (hallucination guard check)
+  eval_citations.py     citation correctness (structural + prose-parsed)
+  run_evaluation_harness.py  runs everything once per query -> scripts/evaluation_report.md
+```
+
+Three refactors exist purely for testability (documented where made): `embed_index.build_vector_index()`
+takes an optional `embedder=` so unit tests inject `FakeEmbedder` instead of loading the real ~130MB
+SentenceTransformer; `backend.py`'s RAG agent is built lazily via `get_agent()` on first request instead
+of at import time, so `TestClient(backend.app)` doesn't walk `ROOT_DIR`/hit Confluence just from
+importing the module; `router.route_query`'s `Groq(...)` client construction is inside its own
+try/except (previously outside it), matching the function's documented "never raises" contract.
+
+`scripts/eval_*.py` run against the REAL saved index and REAL Groq API (except `eval_retrieval.py`,
+which only needs the index) — they are evaluation tooling, not part of the mocked `pytest` suite, and
+will burn real API quota. The free/on-demand Groq tier's tokens-per-minute AND tokens-per-day limits are
+easy to exhaust running the full query set — `eval_common.with_rate_limit_retry` retries transient 429s,
+but a single oversized request (HTTP 413, one retrieved file's full content alone exceeding the TPM
+budget) or daily quota exhaustion cannot be retried away. `scripts/run_evaluation_harness.py` never lets
+one query's failure crash the run (`eval_common.safe_ask`) — a failed query shows up as `mode: "error"`
+in the report instead of losing the whole evaluation.

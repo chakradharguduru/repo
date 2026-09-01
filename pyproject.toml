@@ -1,0 +1,46 @@
+[tool.pytest.ini_options]
+# Repo root has no package __init__.py files (flat module layout: ingest.py,
+# search.py, etc. live at top level), so pytest's default rootless import
+# mode won't put it on sys.path automatically — pythonpath does that.
+pythonpath = ["."]
+testpaths = ["tests"]
+# Excludes @pytest.mark.live by default — a plain `pytest` run never hits
+# the real Groq API. Run live tests explicitly with: pytest -m live
+addopts = "-m 'not live'"
+markers = [
+    "live: hits the real Groq API (and other live external services) — excluded from CI, run manually before submission",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = [
+    "config",
+    "ingest",
+    "confluence_ingest",
+    "embed_index",
+    "search",
+    "context",
+    "router",
+    "llm",
+    "rag_agent",
+    "backend",
+]
+omit = [
+    "tests/*",
+    "scripts/*",
+    "frontend/*",
+    "main.py",
+]
+
+[tool.coverage.report]
+# Measured coverage is ~95% (well past the 80% QA-proposal target); floor
+# set a bit below that as headroom rather than pinned to the exact number,
+# so one new untested line doesn't fail every build.
+fail_under = 90
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]

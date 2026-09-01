@@ -23,3 +23,11 @@ confluence_cache/
 
 # Cache
 .pytest_cache/
+
+# Coverage artifacts (regenerate with: pytest --cov=. --cov-report=html)
+.coverage
+htmlcov/
+coverage.xml
+
+# LLM debug dump (see llm.py / CLAUDE.md)
+prompt.txt

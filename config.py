@@ -13,10 +13,36 @@ load_dotenv(override=True)  # reads a local .env file if present (for GROQ_API_K
 
 env_path = Path(__file__).parent / ".env"
 
+# Startup diagnostics print .env contents so you can eyeball what got loaded —
+# kept intentionally (see CLAUDE.md) but values on lines that look like
+# secrets (KEY/TOKEN/SECRET/PASSWORD) are masked. This file gets imported by
+# every test and by CI, so the raw GROQ_API_KEY / CONFLUENCE_API_TOKEN must
+# never hit stdout/CI logs in full.
+_SECRET_NAME_HINTS = ("KEY", "TOKEN", "SECRET", "PASSWORD")
+
+
+def _redact_env_text(text: str) -> str:
+    lines = []
+    for line in text.splitlines():
+        if "=" in line and not line.strip().startswith("#"):
+            name, _, value = line.partition("=")
+            if any(hint in name.upper() for hint in _SECRET_NAME_HINTS) and value:
+                value = f"***REDACTED(len={len(value)})***"
+            line = f"{name}={value}"
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def _redact_secret(value):
+    if not value:
+        return value
+    return f"***REDACTED(len={len(value)})***"
+
+
 print("Config file :", __file__)
 print("Expected .env:", env_path)
-print("\n========== .env Contents ==========")
-print(env_path.read_text())
+print("\n========== .env Contents (secrets redacted) ==========")
+print(_redact_env_text(env_path.read_text()) if env_path.exists() else "(no .env file found)")
 print("===================================\n")
 print("Exists:", env_path.exists())
 
@@ -24,7 +50,7 @@ print("=" * 80)
 print("Current Working Directory :", os.getcwd())
 print("Environment GROQ_MODEL    :", os.getenv("GROQ_MODEL"))
 print("Environment REPO_ROOT     :", os.getenv("REPO_ROOT"))
-print("Environment GROQ_API_KEY  :", os.getenv("GROQ_API_KEY"))
+print("Environment GROQ_API_KEY  :", _redact_secret(os.getenv("GROQ_API_KEY")))
 print("=" * 80)
 
 # -----------------------------
@@ -50,7 +76,7 @@ EMBEDDINGS_FILE = INDEX_DIR / "embeddings.npy"
 # -----------------------------
 EMBED_MODEL_NAME = "BAAI/bge-small-en-v1.5"
 
-ROUTER_MODEL = os.getenv("ROUTER_MODEL", "llama-3.1-8b-instant")
+ROUTER_MODEL = os.getenv("ROUTER_MODEL", "openai/gpt-oss-20b")
 
 ALIAS_MIN_SCORE = float(os.getenv("ALIAS_MIN_SCORE", "0"))
 
@@ -58,10 +84,11 @@ ALIAS_MIN_SCORE = float(os.getenv("ALIAS_MIN_SCORE", "0"))
 # Groq (LLM that answers using the retrieved chunks)
 # -----------------------------
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-# llama-3.3-70b-versatile is the model your working notebook used — much
-# stronger reasoning than the smaller 8b-instant default, which matters
-# for multi-step "what transformations happen here" style questions.
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+# Groq retired the llama-3.x family for this account (confirmed via
+# client.models.list() — 404 model_not_found on llama-3.3-70b-versatile).
+# openai/gpt-oss-120b is the closest current equivalent: strong reasoning,
+# matters for multi-step "what transformations happen here" style questions.
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
 
 GROQ_TEMPERATURE = float(os.getenv("GROQ_TEMPERATURE", "0.3"))
@@ -90,3 +117,8 @@ DEFAULT_TOP_K = 5
 # Debug logging (filter/alias detection prints)
 # -----------------------------
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+
+# Where llm.generate_answer() dumps the full prompt sent to Groq (see
+# CLAUDE.md — intentional, not leftover debug code). Configurable so tests
+# can redirect it to a tmp path instead of littering the repo root.
+PROMPT_LOG_FILE = Path(os.getenv("PROMPT_LOG_FILE", "prompt.txt"))

@@ -108,13 +108,17 @@ def route_query(query: str, history=None) -> Dict:
         # No key -> safest default is to search with the raw query.
         return {"mode": "codebase", "standalone_query": query}
 
-    client = Groq(api_key=config.GROQ_API_KEY)
     prompt = _ROUTER_TEMPLATE.format(
         history=_render_history(history),
         question=query,
     )
 
     try:
+        # Client construction is inside the try too — the docstring promises
+        # this function never raises, so a failure creating the Groq client
+        # (bad key format, etc.) must fall back the same way an API-call
+        # failure does, not propagate.
+        client = Groq(api_key=config.GROQ_API_KEY)
         resp = client.chat.completions.create(
             model=config.ROUTER_MODEL,
             temperature=0,

@@ -1,0 +1,74 @@
+[
+  {
+    "query": "what target table we are writing ezcater_catering and what are the merge keys",
+    "expected_source_file_path": "C:\\Users\\chakradharreddy.gudu\\Desktop\\dataplatform_axe\\axe\\axe\\axe\\configs\\pipelines\\curated\\transaction\\ezcater_catering_order.yaml",
+    "expected_chunk_name": "ezcater_catering_order",
+    "source_type": "yaml"
+  },
+  {
+    "query": "What does read_data do in util?",
+    "expected_source_file_path": "C:\\Users\\chakradharreddy.gudu\\Desktop\\dataplatform_axe\\axe\\axe\\axe\\utils\\util.py",
+    "expected_chunk_name": "read_data",
+    "source_type": "python"
+  },
+  {
+    "query": "What does transform do in ezcater_catering_order_line?",
+    "expected_source_file_path": "C:\\Users\\chakradharreddy.gudu\\Desktop\\dataplatform_axe\\axe\\axe\\axe\\transformations\\transaction\\ezcater_catering_order_line.py",
+    "expected_chunk_name": "transform",
+    "source_type": "python"
+  },
+  {
+    "query": "what type of transformations we are doing in givex",
+    "expected_source_file_path": "C:\\Users\\chakradharreddy.gudu\\Desktop\\dataplatform_axe\\axe\\axe\\axe\\transformations\\transaction\\givex.py",
+    "expected_chunk_name": "transform",
+    "source_type": "python"
+  },
+  {
+    "query": "what is the target table for food safety audit",
+    "expected_source_file_path": "C:\\Users\\chakradharreddy.gudu\\Desktop\\dataplatform_axe\\axe\\axe\\axe\\configs\\pipelines\\curated\\brand\\food_safety_audit.yaml",
+    "expected_chunk_name": "food_safety_audit",
+    "source_type": "yaml"
+  },
+  {
+    "query": "What does the franchise_fees pipeline configure?",
+    "expected_source_file_path": "C:\\Users\\chakradharreddy.gudu\\Desktop\\dataplatform_axe\\axe\\axe\\axe\\configs\\pipelines\\staging\\frm\\franchise_fees.yaml",
+    "expected_chunk_name": "franchise_fees",
+    "source_type": "yaml"
+  },
+  {
+    "query": "What does the doordash_delivery_order_operation pipeline configure?",
+    "expected_source_file_path": "C:\\Users\\chakradharreddy.gudu\\Desktop\\dataplatform_axe\\axe\\axe\\axe\\configs\\pipelines\\curated\\transaction\\doordash_delivery_order_operation.yaml",
+    "expected_chunk_name": "doordash_delivery_order_operation",
+    "source_type": "yaml"
+  },
+  {
+    "query": "what is mentioned in the DP Jobs and Schedule page",
+    "expected_source_file_path": "confluence_cache\\1200750681_dp_jobs_and_schedule.txt",
+    "expected_chunk_name": "DP Jobs and Schedule (part 1/3)",
+    "source_type": "confluence"
+  },
+  {
+    "query": "What does the givex_ingestion_poc_airflow Confluence page say about B.1 Givex_adls_orchestration_inc_daily \u2014 full DAG (part 16/27)?",
+    "expected_source_file_path": "confluence_cache\\2608037906_givex_ingestion_poc_airflow.txt",
+    "expected_chunk_name": "B.1 Givex_adls_orchestration_inc_daily \u2014 full DAG (part 16/27)",
+    "source_type": "confluence"
+  },
+  {
+    "query": "What does the databricks_job_cluster_policy_enforcement_engineering_standard Confluence page say about 8. Exception Handling?",
+    "expected_source_file_path": "confluence_cache\\2057404418_databricks_job_cluster_policy_enforcement_engineering_standard.txt",
+    "expected_chunk_name": "8. Exception Handling",
+    "source_type": "confluence"
+  },
+  {
+    "query": "What does the brand_survey_response Confluence page say about Legacy procedure: dbo.spMergeSurveyDetails (part 5/6)?",
+    "expected_source_file_path": "confluence_cache\\1522728983_brand_survey_response.txt",
+    "expected_chunk_name": "Legacy procedure: dbo.spMergeSurveyDetails (part 5/6)",
+    "source_type": "confluence"
+  },
+  {
+    "query": "What is documented on the sprint_18_demo_9_22_2022 Confluence page?",
+    "expected_source_file_path": "confluence_cache\\411031873_sprint_18_demo_9_22_2022.txt",
+    "expected_chunk_name": "Sprint 18 Demo - 9/22/2022",
+    "source_type": "confluence"
+  }
+]

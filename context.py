@@ -12,7 +12,7 @@ complete answers than sending bare chunks did.
 from pathlib import Path
 from typing import List, Dict
 
-from utils import safe_read_file
+from utils import safe_print, safe_read_file
 
 
 def build_context(chunks: List[Dict]) -> str:
@@ -70,7 +70,7 @@ def build_context(chunks: List[Dict]) -> str:
     print("=" * 80)
 
     print("\nFirst 2000 characters of context\n")
-    print(context[:2000])
+    safe_print(context[:2000])
 
     print("\n")
     print("=" * 80)

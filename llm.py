@@ -13,6 +13,7 @@ from groq import Groq
 
 import config
 from context import build_context
+from utils import safe_print
 
 SYSTEM_PROMPT = (
     "You are an expert assistant for the AXE Data Platform, grounded in both "
@@ -123,14 +124,14 @@ def generate_answer(query: str, chunks: List[Dict], history=None) -> str:
 
     print("\nPrompt Length:", len(user_msg))
     print("=" * 80)
-    print(user_msg[:4000])
+    safe_print(user_msg[:4000])
     print("=" * 80)
     print("Model       :", config.GROQ_MODEL)
     print("Temperature :", config.GROQ_TEMPERATURE)
 
-    with open("prompt.txt", "w", encoding="utf-8") as f:
+    with open(config.PROMPT_LOG_FILE, "w", encoding="utf-8") as f:
         f.write(user_msg)
-    print("Prompt saved to prompt.txt")
+    print(f"Prompt saved to {config.PROMPT_LOG_FILE}")
 
     response = client.chat.completions.create(
         model=config.GROQ_MODEL,
@@ -143,6 +144,6 @@ def generate_answer(query: str, chunks: List[Dict], history=None) -> str:
 
     print("\nLLM Response")
     print("=" * 80)
-    print(response.choices[0].message.content)
+    safe_print(response.choices[0].message.content)
 
     return response.choices[0].message.content

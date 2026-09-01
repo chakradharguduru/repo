@@ -190,3 +190,23 @@ rebuilds full-file context and `config.py` defaults to the 70b model.
   Python + system libraries into one reproducible container). Since
   you're running locally, you don't need it. If you later want to put
   this on a server somewhere, that's when Docker becomes useful.
+
+## Testing & evaluation
+
+```bash
+pip install -r requirements-dev.txt
+pytest                                    # unit + integration + non-live e2e (no API key needed)
+pytest --cov=. --cov-report=html          # + coverage report in htmlcov/
+pytest -m live tests/e2e/test_api_e2e.py  # hits the real Groq API — needs GROQ_API_KEY
+```
+
+`scripts/eval_*.py` evaluate the real, currently-indexed pipeline against `scripts/test_queries.json`
+(retrieval recall, hallucination rate via an LLM grounding judge, citation correctness). Run them all
+and get a single Markdown report with:
+
+```bash
+python scripts/run_evaluation_harness.py   # -> scripts/evaluation_report.md
+```
+
+These make real Groq API calls and can hit the free tier's rate limits on a full query set — see
+CLAUDE.md's Testing & evaluation section for details.

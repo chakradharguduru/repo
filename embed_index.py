@@ -6,8 +6,7 @@ a query.
 Also handles saving/loading, so you don't have to re-embed the whole
 repo every time you run the project — only when the repo changes.
 """
-from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List, Dict, Optional, Tuple
 import json
 
 import numpy as np
@@ -17,10 +16,19 @@ from sentence_transformers import SentenceTransformer
 import config
 
 
-def build_vector_index(chunks: List[Dict]) -> Tuple[SentenceTransformer, "faiss.Index", np.ndarray]:
-    """Embed every chunk's content and build a flat FAISS index over it."""
-    print(f"Loading embedding model ({config.EMBED_MODEL_NAME})...")
-    model = SentenceTransformer(config.EMBED_MODEL_NAME)
+def build_vector_index(
+    chunks: List[Dict], embedder: Optional[SentenceTransformer] = None
+) -> Tuple[SentenceTransformer, "faiss.Index", np.ndarray]:
+    """Embed every chunk's content and build a flat FAISS index over it.
+
+    `embedder` defaults to loading the real SentenceTransformer model, but
+    can be injected (any object with an `.encode()` method) — tests use this
+    to avoid loading a ~130MB model just to check embedding/index shape.
+    """
+    model = embedder
+    if model is None:
+        print(f"Loading embedding model ({config.EMBED_MODEL_NAME})...")
+        model = SentenceTransformer(config.EMBED_MODEL_NAME)
 
     texts = [chunk["content"] for chunk in chunks]
     print(f"Embedding {len(texts)} chunks...")

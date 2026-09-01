@@ -1,0 +1,4 @@
+pipeline_name: sales_daily
+source: staging.sales_raw
+target: curated.sales_summary
+schedule: "0 6 * * *"

@@ -1,0 +1,16 @@
+<table>
+<tr><td>Zone</td><td>Curated</td></tr>
+<tr><td>Table name</td><td>transaction_order</td></tr>
+</table>
+<p>Paragraph 01: this page has no h1 or h2 tags at all, only tables and paragraphs, mirroring the real "Order" Confluence page that triggered the chunking bug.</p>
+<p>Paragraph 02: Data Source section begins here. Qu API endpoints include check, location, item, orderChannel, orderType, paymentType.</p>
+<p>Paragraph 03: Staging tables for Qu are qu_check_staging, qu_menu_staging, qu_staging_establishment_map.</p>
+<p>Paragraph 04: Aloha DB staging tables are aloha_nonfocusalohasbrmap_staging, aloha_odr_staging, aloha_gnditem_staging, aloha_modcode_staging.</p>
+<p>Paragraph 05: Revel DB staging tables are revel_staging_brand_service_fee, revel_staging_brand_applied_service_fee, revel_staging_brand_establishment_map.</p>
+<p>Paragraph 06: Revel DB continues with revel_staging_brand_establishment_time_zone_offset, revel_staging_brand_product, revel_staging_brand_order.</p>
+<p>Paragraph 07: Toast API endpoint is ordersBulk. Staging tables are toast_staging_order_line, toast_staging_dining_option, toast_staging_menu_item.</p>
+<p>Paragraph 08: Primary Keys are store_id (unique across brands), check_number, business_date. These uniquely identify a transaction order row.</p>
+<p>Paragraph 09: Column mapping notes for order_mode across Qu, Revel, Aloha, and Toast source systems follow in the remaining rows of this table.</p>
+<p>Paragraph 10: Additional column mapping detail padding this fixture out past the chunk size cap so the splitter has to produce more than one piece.</p>
+<p>Paragraph 11: More filler text describing discount_amount, tip_amount, and tax_amount column derivations across brands for completeness.</p>
+<p>Paragraph 12: Final paragraph closing out the page content used to exercise the no-heading, size-based chunk splitting fallback path.</p>
