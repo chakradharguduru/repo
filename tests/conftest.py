@@ -92,7 +92,7 @@ class FakeGroqClient:
         self.chat = self
         self.completions = self
 
-    def create(self, model, messages, temperature=0):
+    def create(self, model, messages, temperature=0, **kwargs):
         self.calls.append({"model": model, "messages": messages, "temperature": temperature})
         if self._fixed is not None:
             content = self._fixed

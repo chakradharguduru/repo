@@ -28,7 +28,7 @@ def build_vector_index(
     model = embedder
     if model is None:
         print(f"Loading embedding model ({config.EMBED_MODEL_NAME})...")
-        model = SentenceTransformer(config.EMBED_MODEL_NAME)
+        model = SentenceTransformer(config.EMBED_MODEL_NAME, model_kwargs=config.EMBED_MODEL_KWARGS)
 
     texts = [chunk["content"] for chunk in chunks]
     print(f"Embedding {len(texts)} chunks...")

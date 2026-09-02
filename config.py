@@ -76,6 +76,19 @@ EMBEDDINGS_FILE = INDEX_DIR / "embeddings.npy"
 # -----------------------------
 EMBED_MODEL_NAME = "BAAI/bge-small-en-v1.5"
 
+# Reproducible hang: the installed transformers/accelerate's default
+# low_cpu_mem_usage=True lazily materializes weights on a meta device one
+# tensor at a time, and in this environment that path deterministically
+# stalls partway through (confirmed: same exact param, every time, even
+# with no other load on the machine). Forcing low_cpu_mem_usage=False makes
+# it load all weights directly instead — slower to import torch, but it
+# actually completes instead of hanging indefinitely.
+EMBED_MODEL_KWARGS = {"low_cpu_mem_usage": False}
+
+# Tried groq/compound-mini here to dodge openai/gpt-oss-120b's 200K TPD cap
+# — its own 429 confirmed it still routes some requests through that same
+# exhausted model, unpredictably. Reverted; a fresh API key resets the
+# quota rather than fighting compound's routing.
 ROUTER_MODEL = os.getenv("ROUTER_MODEL", "openai/gpt-oss-20b")
 
 ALIAS_MIN_SCORE = float(os.getenv("ALIAS_MIN_SCORE", "0"))
@@ -86,8 +99,12 @@ ALIAS_MIN_SCORE = float(os.getenv("ALIAS_MIN_SCORE", "0"))
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 # Groq retired the llama-3.x family for this account (confirmed via
 # client.models.list() — 404 model_not_found on llama-3.3-70b-versatile).
-# openai/gpt-oss-120b is the closest current equivalent: strong reasoning,
-# matters for multi-step "what transformations happen here" style questions.
+# openai/gpt-oss-120b has an 8K TPM / 200K TPD free-tier cap that real usage
+# (full-file context, a multi-query eval harness) can trip — confirmed both
+# 413 "request too large" and 429 daily-quota errors. Tried groq/compound
+# and groq/compound-mini as a fix; both turned out to still route some
+# requests through this same underlying model and its same exhausted daily
+# pool, unpredictably, so it wasn't a real fix. Reverted.
 GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
 

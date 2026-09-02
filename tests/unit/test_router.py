@@ -20,7 +20,7 @@ class _FakeGroqLike:
         self._response_text = response_text
         self.calls = []
 
-    def create(self, model, messages, temperature=0):
+    def create(self, model, messages, temperature=0, **kwargs):
         self.calls.append({"model": model, "messages": messages})
         msg = SimpleNamespace(content=self._response_text)
         choice = SimpleNamespace(message=msg)
