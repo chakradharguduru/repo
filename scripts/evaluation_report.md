@@ -1,52 +1,64 @@
 # KnowBot RAG — Evaluation Report
 
-Generated: 2026-09-01T12:19:52+00:00
+Generated: 2026-09-02T14:07:04+00:00
 Model: `openai/gpt-oss-120b` (router: `openai/gpt-oss-20b`)
-Query set: 12 test queries + 3 out-of-scope queries
+Query set: 14 test queries + 3 out-of-scope queries
 
 ## Summary vs. QA targets
 
 | Metric | Result | Target | Verdict |
 |---|---|---|---|
-| Retrieval Top-3 Recall | 88.9% | ≥70% | PASS |
-| Hallucination Rate | 33.3% | <15% | FAIL |
-| Citation Correctness | 100.0% | 100% | PASS |
-| Avg. Answer Quality (LLM-assisted) | 4.4 / 5 | informational | — |
+| Retrieval Top-3 Recall | 100.0% | ≥70% | PASS |
+| Hallucination Rate | 21.4% | <15% | FAIL |
+| Citation Correctness | 85.7% | 100% | FAIL |
+| Avg. Answer Quality (LLM-assisted) | 5.0 / 5 | informational | — |
 
-(9 of 12 queries were retrieval-scored 'codebase' responses; 3 were 'general' responses with no retrieval to score.)
+(14 of 14 queries were retrieval-scored 'codebase' responses; 0 were 'general' responses with no retrieval to score.)
 
-**Out-of-scope hallucination guard:** 1/3 correctly declined or were judged ungrounded rather than fabricating an answer.
+**Out-of-scope hallucination guard:** 3/3 correctly declined or were judged ungrounded rather than fabricating an answer.
+
+## Results by query category
+
+Direct evidence for RFP query-category coverage — each row is scored against the same 4 targets as the summary table above, computed only from that category's queries. Pre-existing code/config-lookup queries are tagged `reference` (not an RFP category) and reported separately below, not folded into these 4 rows.
+
+| Category | Queries | Retrieval Accuracy | Hallucination Rate | Citation Correctness | Avg Quality Score |
+|---|---|---|---|---|---|
+| How-to | 3 | 100.0% | 33.3% | 66.7% | 5.0 / 5 |
+| Troubleshooting | 3 | 100.0% | 33.3% | 100.0% | 5.0 / 5 |
+| Architecture | 5 | 100.0% | 20.0% | 80.0% | 5.0 / 5 |
+| Policy | 3 | 100.0% | 0.0% | 100.0% | 5.0 / 5 |
 
 ## Per-query detail
 
-| # | Query | Mode | Retrieval Hit | Citation OK | Grounded | Quality | Answer (preview) |
-|---|---|---|---|---|---|---|---|
-| 1 | what target table we are writing ezcater_catering and what a | codebase | ❌ | ✅ | ❌ | 1 | **Target tables and merge keys used by the *ezcater catering* pipelines**  | Pip… |
-| 2 | What does read_data do in util? | error | - | - | - | - | ERROR: Error code: 413 - {'error': {'message': 'Request too large for model `ope… |
-| 3 | What does transform do in ezcater_catering_order_line? | codebase | ✅ | ✅ | ❌ | 5 | **Answer – What the `transform` function does in `ezcater_catering_order_line.py… |
-| 4 | what type of transformations we are doing in givex | codebase | ✅ | ✅ | ✅ | 5 | **Giv X pipelines apply a mix of schema‑level and row‑level transformations.**  … |
-| 5 | what is the target table for food safety audit | codebase | ✅ | ✅ | ✅ | 5 | The **food‑safety‑audit** pipeline writes its results to the curated layer table… |
-| 6 | What does the franchise_fees pipeline configure? | codebase | ✅ | ✅ | ✅ | 5 | **franchise_fees pipeline – what it configures**  The `franchise_fees` pipeline … |
-| 7 | What does the doordash_delivery_order_operation pipeline con | error | - | - | - | - | ERROR: Error code: 413 - {'error': {'message': 'Request too large for model `ope… |
-| 8 | what is mentioned in the DP Jobs and Schedule page | codebase | ✅ | ✅ | ✅ | 4 | **DP Jobs and Schedule page (Confluence – https://gotofoods.atlassian.net/wiki/s… |
-| 9 | What does the givex_ingestion_poc_airflow Confluence page sa | error | - | - | - | - | ERROR: Error code: 413 - {'error': {'message': 'Request too large for model `ope… |
-| 10 | What does the databricks_job_cluster_policy_enforcement_engi | codebase | ✅ | ✅ | ✅ | 5 | **Section 8 – Exception Handling (as written on the Confluence page “Databricks … |
-| 11 | What does the brand_survey_response Confluence page say abou | codebase | ✅ | ✅ | ✅ | 5 | **Legacy procedure dbo.spMergeSurveyDetails – part 5/6 (as described on the *bra… |
-| 12 | What is documented on the sprint_18_demo_9_22_2022 Confluenc | codebase | ✅ | ✅ | ❌ | 5 | The **Sprint 18 Demo – 9/22/2022** Confluence page contains the meeting agenda f… |
+| # | Query | Category | Mode | Retrieval Hit | Citation OK | Grounded | Quality | Answer (preview) |
+|---|---|---|---|---|---|---|---|---|
+| 1 | explain Azure Functions Local Environment Configuration acco | how_to | codebase | ✅ | ❌ | ❌ | 5 | **Azure Functions – Local Environment Configuration**   *(Source: Confluence pag… |
+| 2 | How to handle Temporarily Disabled Pipelines in ADF Trigger  | how_to | codebase | ✅ | ✅ | ✅ | 5 | **How to handle temporarily‑disabled pipelines in Azure Data Factory (ADF) trigg… |
+| 3 | How do I get Airflow access to connect to the UI and VM in d | how_to | codebase | ✅ | ✅ | ✅ | 5 | **Getting Airflow access (UI + SSH) for DEV and PROD**  All of the steps are des… |
+| 4 | what are Airflow ADF Databricks Issues mentioned in confluen | troubleshooting | codebase | ✅ | ✅ | ✅ | 5 | **Airflow – ADF – Databricks Integration: Issue & Resolution Log**   *(as docume… |
+| 5 | What issues are logged in the issue tracker for our Databric | troubleshooting | codebase | ✅ | ✅ | ❌ | 5 | **Databricks‑pipeline issues recorded in the Issue Tracker**  | Ticket | Date (2… |
+| 6 | What performance issues have been identified with our ADF pi | troubleshooting | codebase | ✅ | ✅ | ✅ | 5 | **Identified performance‑related issues with the current Azure Data Factory (ADF… |
+| 7 | what is present in the list of data sources confluence page? | architecture | codebase | ✅ | ❌ | ❌ | 5 | **What is on the “List of Data Sources” Confluence page**  The page ( https://go… |
+| 8 | What does the Customer and Loyalty domain documentation say  | architecture | codebase | ✅ | ✅ | ✅ | 5 | The documentation explains that the **Customer and Loyalty domain’s purpose is t… |
+| 9 | what sources are we using in speed_of_service_delphi | architecture | codebase | ✅ | ✅ | ✅ | 5 | **Sources used by the `speed_of_service_delphi` pipeline**  | Source name (as de… |
+| 10 | In economic_series_observation, what is the source type and  | architecture | codebase | ✅ | ✅ | ✅ | 5 | In the **`economic_series_observation`** configuration the two fields are define… |
+| 11 | what is the target table and what are the mergekeys in the f | architecture | codebase | ✅ | ✅ | ✅ | 5 | **Target table**  - In the *form_submission* pipeline configuration the **target… |
+| 12 | What does the databricks_job_cluster_policy_enforcement_engi | policy | codebase | ✅ | ✅ | ✅ | 5 | **Section 8 – Exception Handling** (from the *Databricks Job Cluster Policy Enfo… |
+| 13 | what standards we need to follow for ADF Pipeline Structure  | policy | codebase | ✅ | ✅ | ✅ | 5 | **ADF Pipeline Structure & Naming Standards**   *(Source: “ADF Pipeline Structur… |
+| 14 | What are the required design standards for naming and struct | policy | codebase | ✅ | ✅ | ✅ | 5 | **Required design standards for naming and structuring Delta tables**   *(Source… |
 
 ## Notes on flagged rows
 
-- **#1** (`what target table we are writing ezcater_catering and what a`): not grounded — The answer's claims about ezcater pipelines, target tables, and merge keys are not present in the provided source code.
-- **#2** (`What does read_data do in util?`): pipeline error — ERROR: Error code: 413 - {'error': {'message': 'Request too large for model `openai/gpt-oss-120b` in organization `org_01kx8dwws3emhvd4hd8k7zvdka` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Requested 21113, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
-- **#3** (`What does transform do in ezcater_catering_order_line?`): not grounded — The answer includes many claims (e.g., building hash keys, adding timestamps, final column selection, error handling details) that are not present in the provided source code.
-- **#7** (`What does the doordash_delivery_order_operation pipeline con`): pipeline error — ERROR: Error code: 413 - {'error': {'message': 'Request too large for model `openai/gpt-oss-120b` in organization `org_01kx8dwws3emhvd4hd8k7zvdka` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Requested 8234, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
-- **#9** (`What does the givex_ingestion_poc_airflow Confluence page sa`): pipeline error — ERROR: Error code: 413 - {'error': {'message': 'Request too large for model `openai/gpt-oss-120b` in organization `org_01kx8dwws3emhvd4hd8k7zvdka` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Requested 26050, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
-- **#12** (`What is documented on the sprint_18_demo_9_22_2022 Confluenc`): not grounded — The answer adds unsupported details (expanding AAS to Azure Analysis Services and claiming the agenda items are the only content on the page) not confirmed by the source.
+- **#1** (`explain Azure Functions Local Environment Configuration acco`): not grounded — The answer includes additional explanatory claims (e.g., about virtual‑environment isolation, mirroring Azure Application Settings, purpose of the ENV key, and runtime storage requirements) that are not explicitly stated in the source material.
+- **#1** (`explain Azure Functions Local Environment Configuration acco`): citation mismatch — a cited file was not among the retrieved chunks
+- **#5** (`What issues are logged in the issue tracker for our Databric`): not grounded — The answer claims the table name is part of the issue, but the source lists it under the resolution, not the issue.
+- **#7** (`what is present in the list of data sources confluence page?`): not grounded — The answer claims MSI – DataFeed uses sFTP, but the source material does not show sFTP as the source type for that entry
+- **#7** (`what is present in the list of data sources confluence page?`): citation mismatch — a cited file was not among the retrieved chunks
 
 ## Out-of-scope queries (hallucination guard)
 
 | Query | Mode | Guard OK | Answer (preview) |
 |---|---|---|---|
-| What does the unicorn_sparkle_processor.py file do? | error | ❌ | ERROR: Error code: 413 - {'error': {'message': 'Request too large for model `openai/gpt-oss-120b` in… |
-| Summarize the blockchain_integration Confluence page. | codebase | ✅ | I’m sorry, but none of the Confluence pages provided in the material contain a “blockchain_integrati… |
-| What primary key does the mars_colony_inventory table use? | error | ❌ | ERROR: Error code: 413 - {'error': {'message': 'Request too large for model `openai/gpt-oss-120b` in… |
+| is there any information on auto loader or spark structured streaming? | codebase | ✅ | I’m sorry, but none of the material you provided contains any information about **Auto Loader** or *… |
+| Summarize the blockchain_integration Confluence page. | codebase | ✅ | I’m sorry, but none of the Confluence pages provided in the material include a “blockchain_integrati… |
+| is there any information on powerBi import to AI/BI Dashboards | codebase | ✅ | Based on the material you provided, the only Power BI‑related content is the **“Power BI”** Confluen… |

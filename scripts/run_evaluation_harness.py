@@ -45,6 +45,12 @@ CITATION_TARGET = 1.00
 
 DEFAULT_REPORT_PATH = SCRIPTS_DIR / "evaluation_report.md"
 
+# A one-time, submission-grade full run cares about completing cleanly, not
+# speed — pause between the 3 back-to-back Groq calls within a single query
+# (answer -> grounding judge -> quality judge) so they don't spike the free
+# tier's per-minute token budget right after each other.
+JUDGE_CALL_DELAY_SECONDS = 15
+
 
 def _same_file(path_a: str, path_b: str) -> bool:
     try:
@@ -53,10 +59,13 @@ def _same_file(path_a: str, path_b: str) -> bool:
         return path_a == path_b
 
 
-def _evaluate_one(agent, client, query: str, expected_path: str | None, recall_top_k: int = 3) -> dict:
+def _evaluate_one(
+    agent, client, query: str, expected_path: str | None, recall_top_k: int = 3, category: str = "reference"
+) -> dict:
     result = safe_ask(agent, query)
     record = {
         "query": query,
+        "category": category,
         "mode": result["mode"],
         "answer": result["answer"],
         "sources": result["sources"],
@@ -95,10 +104,13 @@ def _evaluate_one(agent, client, query: str, expected_path: str | None, recall_t
         record["citation_correct"] = not unmatched
 
         context_block = build_context(sources)
+
+        time.sleep(JUDGE_CALL_DELAY_SECONDS)
         grounding = judge_grounding(client, context_block, result["answer"])
         record["grounded"] = grounding.get("grounded")
         record["grounded_reason"] = grounding.get("reason", "")
 
+        time.sleep(JUDGE_CALL_DELAY_SECONDS)
         quality = judge_quality(client, query, context_block, result["answer"])
         record["quality_score"] = quality.get("score")
         record["quality_reason"] = quality.get("justification", "")
@@ -120,17 +132,20 @@ def run(queries_path: Path = DEFAULT_QUERIES_FILE, top_k: int = 3, include_out_o
     client = Groq(api_key=config.GROQ_API_KEY)
     test_queries = load_test_queries(queries_path)
 
-    # A small gap between queries — each query makes 2-4 real Groq calls
-    # (router, answer, grounding judge, quality judge), and the free tier's
-    # tokens-per-minute budget is easy to exhaust running 10+ queries back
-    # to back with no pause at all.
-    QUERY_DELAY_SECONDS = 5
+    # A gap between queries — each query makes 2-4 real Groq calls (router,
+    # answer, grounding judge, quality judge), and the free tier's
+    # tokens-per-minute budget is easy to exhaust running 14+ queries back
+    # to back. This is a one-time submission run, so favor reliability over
+    # speed: 45s between queries, plus JUDGE_CALL_DELAY_SECONDS between the
+    # 3 calls within a single query (see _evaluate_one).
+    QUERY_DELAY_SECONDS = 45
 
     records = []
     for item in test_queries:
         print(f"Evaluating: {item['query']}")
         records.append(_evaluate_one(
-            agent, client, item["query"], item.get("expected_source_file_path"), recall_top_k=top_k
+            agent, client, item["query"], item.get("expected_source_file_path"),
+            recall_top_k=top_k, category=item.get("category", "reference"),
         ))
         time.sleep(QUERY_DELAY_SECONDS)
 
@@ -182,6 +197,27 @@ def _aggregate(records: list) -> dict:
     }
 
 
+# The 4 RFP-mandated query categories, in report display order. Queries
+# that predate this categorization (plain code/config lookups) are tagged
+# "reference" instead — a 5th, non-RFP bucket reported separately so it
+# doesn't dilute or inflate the 4 categories the RFP actually asks about.
+RFP_CATEGORIES = [
+    ("how_to", "How-to"),
+    ("troubleshooting", "Troubleshooting"),
+    ("architecture", "Architecture"),
+    ("policy", "Policy"),
+]
+
+
+def _aggregate_by_category(records: list) -> dict:
+    """Same 4 metrics as _aggregate(), computed separately per RFP category."""
+    by_cat = {}
+    for cat_key, _label in RFP_CATEGORIES:
+        cat_records = [r for r in records if r.get("category") == cat_key]
+        by_cat[cat_key] = _aggregate(cat_records) if cat_records else None
+    return by_cat
+
+
 def _pct(x):
     return "n/a" if x is None else f"{x:.1%}"
 
@@ -229,14 +265,50 @@ def write_report(results: dict, report_path: Path = DEFAULT_REPORT_PATH, top_k: 
                       "declined or were judged ungrounded rather than fabricating an answer.")
         lines.append("")
 
+    lines.append("## Results by query category")
+    lines.append("")
+    lines.append(
+        "Direct evidence for RFP query-category coverage — each row is scored against the "
+        "same 4 targets as the summary table above, computed only from that category's "
+        "queries. Pre-existing code/config-lookup queries are tagged `reference` (not an RFP "
+        "category) and reported separately below, not folded into these 4 rows."
+    )
+    lines.append("")
+    lines.append("| Category | Queries | Retrieval Accuracy | Hallucination Rate | Citation Correctness | Avg Quality Score |")
+    lines.append("|---|---|---|---|---|---|")
+    cat_agg = _aggregate_by_category(records)
+    for cat_key, label in RFP_CATEGORIES:
+        agg_c = cat_agg[cat_key]
+        if agg_c is None:
+            lines.append(f"| {label} | 0 | n/a | n/a | n/a | n/a |")
+            continue
+        avg_q_c = "n/a" if agg_c["avg_quality"] is None else f"{agg_c['avg_quality']:.1f} / 5"
+        lines.append(
+            f"| {label} | {agg_c['n_total']} | {_pct(agg_c['recall'])} | "
+            f"{_pct(agg_c['hallucination_rate'])} | {_pct(agg_c['citation_correctness'])} | {avg_q_c} |"
+        )
+    lines.append("")
+
+    reference_records = [r for r in records if r.get("category") == "reference"]
+    if reference_records:
+        ref_agg = _aggregate(reference_records)
+        avg_q_ref = "n/a" if ref_agg["avg_quality"] is None else f"{ref_agg['avg_quality']:.1f} / 5"
+        lines.append(
+            f"*(`reference` — code/config-lookup queries, not an RFP category, informational "
+            f"only: {ref_agg['n_total']} queries, {_pct(ref_agg['recall'])} recall, "
+            f"{_pct(ref_agg['hallucination_rate'])} hallucination rate, "
+            f"{_pct(ref_agg['citation_correctness'])} citation correctness, {avg_q_ref} quality.)*"
+        )
+        lines.append("")
+
     lines.append("## Per-query detail")
     lines.append("")
-    lines.append("| # | Query | Mode | Retrieval Hit | Citation OK | Grounded | Quality | Answer (preview) |")
-    lines.append("|---|---|---|---|---|---|---|---|")
+    lines.append("| # | Query | Category | Mode | Retrieval Hit | Citation OK | Grounded | Quality | Answer (preview) |")
+    lines.append("|---|---|---|---|---|---|---|---|---|")
     for i, r in enumerate(records, 1):
         preview = r["answer"].replace("\n", " ")[:80]
         lines.append(
-            f"| {i} | {r['query'][:60]} | {r['mode']} | "
+            f"| {i} | {r['query'][:60]} | {r.get('category', '-')} | {r['mode']} | "
             f"{'-' if r['retrieval_hit'] is None else ('✅' if r['retrieval_hit'] else '❌')} | "
             f"{'-' if r['citation_correct'] is None else ('✅' if r['citation_correct'] else '❌')} | "
             f"{'-' if r['grounded'] is None else ('✅' if r['grounded'] else '❌')} | "

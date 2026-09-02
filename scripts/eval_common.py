@@ -48,9 +48,9 @@ def with_rate_limit_retry(func, *args, max_retries: int = 2, backoff_seconds: in
 # these, so the system should decline rather than invent an answer.
 # ---------------------------------------------------------------------
 OUT_OF_SCOPE_QUERIES = [
-    "What does the unicorn_sparkle_processor.py file do?",
+    "is there any information on auto loader or spark structured streaming?",
     "Summarize the blockchain_integration Confluence page.",
-    "What primary key does the mars_colony_inventory table use?",
+    "is there any information on powerBi import to AI/BI Dashboards",
 ]
 
 _NOT_FOUND_PHRASES = (

@@ -55,7 +55,7 @@ class RepoSearchEngine:
     def __init__(self, chunks: List[Dict], embeddings: np.ndarray, model: Optional[SentenceTransformer] = None):
         self.chunks = chunks
         self.embeddings = embeddings
-        self.model = model or SentenceTransformer(config.EMBED_MODEL_NAME)
+        self.model = model or SentenceTransformer(config.EMBED_MODEL_NAME, model_kwargs=config.EMBED_MODEL_KWARGS)
 
         self.layers = sorted({c["layer"] for c in chunks if c["layer"]})
         self.domains = sorted({c["domain"] for c in chunks if c["domain"]})
